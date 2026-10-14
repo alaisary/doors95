@@ -32,8 +32,8 @@ onMounted(() => {
   top:0;
   left:0;
   background: transparent;
-  width: 100vw;
-  height: 100vh;
+  width: calc(100 * var(--vw));
+  height: calc(100 * var(--vh));
 
 }
 

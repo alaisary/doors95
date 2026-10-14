@@ -1,7 +1,10 @@
 import mitt from "mitt"
 
 type Events = {
-    openPage : string
+    openPage: string
+    closePage: string
+    scenarioEvent: { name: string; detail?: any }
+    terminalExec: string
 }
 
 const emitter = mitt<Events>();

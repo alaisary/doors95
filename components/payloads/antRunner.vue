@@ -1,5 +1,5 @@
 <template>
-  <div class="ant-container w-full h-screen absolute top-0 left-0 z-[100000] bg-transparent pointer-events-none">
+  <div class="ant-container w-full h-[var(--app-h)] absolute top-0 left-0 z-[100000] bg-transparent pointer-events-none">
     <div
       v-for="ant in ants"
       :key="ant.id"
@@ -28,8 +28,8 @@ function createAnt(id) {
 
   return {
     id,
-    x: Math.random() * window.innerWidth,
-    y: Math.random() * window.innerHeight,
+    x: Math.random() * vp.w,
+    y: Math.random() * vp.h,
     speed,
     direction,
     dx: Math.cos(radians) * speed,
@@ -55,8 +55,8 @@ onMounted(() => {
       ant.x += ant.dx;
       ant.y += ant.dy;
 
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const w = vp.w;
+      const h = vp.h;
 
       // Wrap-around screen
       if (ant.x > w) ant.x = 0;
@@ -81,8 +81,8 @@ onMounted(() => {
   top:0;
   left:0;
   overflow:hidden;
-  width: 100vw;
-  height: 100vh;
+  width: calc(100 * var(--vw));
+  height: calc(100 * var(--vh));
   z-index: 100003
 }
 .ant {

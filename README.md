@@ -1,93 +1,83 @@
-# Doors95
+# Honey95 — Social Engineering Range
 
-Doors95 is an interactive browser game built to teach users about dangers they can encounter while doing (daily) tasks on a computer.  
-You are placed onto a simulated computer desktop inspired by Windows 95 and are guided through the different missions by our AI assistant Skippy. The main objective is to complete the task at hand without getting infected with viruses.
+Honey95 is an interactive, browser-based **social-engineering attack simulator** built for conference booths and awareness sessions. A participant sits down at a retro Windows 95-style workstation, works through a normal shift in a mailbox and a chat app, and is hit by realistic modern attacks. There is no quiz and no "spot the red flag" checklist: **their behavior is the answer.**
 
-The project is hosted and you can try it out here: https:/doors95.de
+After each scenario, a debrief shows what happened: an attack timeline, the technique used, its real-world prevalence, a detection view (**human tell, control, SOC signal**), and the lessons that would have stopped it.
 
-## Showcase
-![Screenshot 2025-05-24 at 08-27-13 ](https://github.com/user-attachments/assets/f1b8bb8b-3878-46a7-b411-9c7a7afc6195)
-![Screenshot 2025-05-24 at 08-28-09 ](https://github.com/user-attachments/assets/8483a627-f560-4f04-a7d0-9579294a9480)
+> **Safe by design:** everything runs 100% offline in the browser. No real credentials, networks, or payloads are involved. All attacker infrastructure is simulated.
 
-## Impact
-Doors95 raises cybersecurity awareness by simulating real-world threats in a fun, interactive environment. Users learn to spot and avoid risks like phishing and unsafe downloads, making it accessible for all experience levels. 
+## Scenarios
 
-Moreover, it raises awareness about the importance of not trusting everything on the internet and the need for critical thinking when interacting with digital content.
+| Code  | Scenario | Entry | Technique | What the participant faces |
+|-------|----------|-------|-----------|----------------------------|
+| SC-01 | Free frontier AI access — activate today | Mail | AiTM phishing / Browser-in-the-Browser | A "pilot program" email leads to a sign-in window that is only drawn inside the page; credentials and MFA are relayed live and the session cookie is stolen |
+| SC-02 | Verify you are human | Mail | ClickFix (fake CAPTCHA) | A finance-mailbox invoice link leads to a fake verification page that tells the user to paste and run a command |
+| SC-03 | A teammate shared protected documents | Mail | Device-code phishing | Blurred "protected PDFs" and a genuine Microsoft device-login page; the code belongs to the attacker's device, so signing in enrolls it |
+| SC-04 | Annual evaluation — action required | Mail | Subdomain spoofing (domain confusion) | A pixel-perfect clone of a government portal hosted on a free host (`ejada.gov.om.workers.dev`); only the hostname gives it away |
+| SC-05 | You are invited to "Contract Bid Proposal" | Mail | Trusted-service abuse (real Zoom share, malicious file) | A genuine Zoom Docs invitation passes every email check, but the "document" it hands over is a `.js` script that installs an infostealer |
+| SC-06 | Frontier AI for $10 a month | Chat (WhatsApp) | Malicious npm package with an install-time hook | A colleague forwards a post about cheap AI access; copying the install command from the docs runs a `postinstall` script that steals tokens, SSH keys and `.env` files |
 
-### Use Cases
-- **Educational Institutions:**  
-    Schools and universities can use Doors95 as a teaching tool in computer science or cybersecurity courses, providing students with practical experience in a safe environment.
-- **Corporate Training:**
-    Companies can integrate Doors95 into their employee training programs to raise awareness about cybersecurity threats and best practices.
-- **Public Awareness Campaigns:**
-    Non-profit organizations and government agencies can use the game to educate the public about online safety and security.
-- **Individual Learning:**
-    Anyone interested in improving their cybersecurity knowledge can play Doors95 to learn about threats and how to protect themselves online.
+The full "Start shift" experience runs them in the order SC-02, SC-01, SC-03, SC-04, SC-05, SC-06. Each scenario is defined in `stores/scenarios.ts` (lure, coach hints, attack timeline, win and lose debrief, detection and controls, sources). Its UI lives in `components/scenarios/`.
 
-## Architecture
+## Screenshots
 
-Doors95 is structured around a modular event-driven architecture:
+| Desktop and mailbox | Scenario in progress (SC-01) |
+|---|---|
+| ![Desktop with the mailbox](docs/screenshots/01-desktop.png) | ![Fake AI-access site with a Sign in with Microsoft button](docs/screenshots/02-scenario.png) |
 
-- **Event Handler:**  
-    The core event handler listens for user actions (clicks, drags, app launches, file downloads, etc.) and routes them to the appropriate logic. Each event can trigger tasks, payloads (such as simulated malware), or UI updates. This allows for flexible mission scripting and easy extension with new event types.
+## Features
 
-- **Tasks & Payloads:**  
-    Missions are defined as a series of tasks, each with specific objectives and potential pitfalls. Payloads (e.g., viruses, phishing popups) are triggered by certain user actions or by failing to follow safe practices. The system tracks user progress and consequences in real time.
+- **Booth flow:** BIOS-style boot check ("Human firewall ... FAILED"), welcome slide, then a Windows 95 desktop (`components/booth/`)
+- **Simulated desktop** with draggable windows and apps: mail, browser, terminal, notepad, antivirus, authenticator, WhatsApp, Zoom email, and the Scamcyclopedia (`components/range/`, `components/apps/`)
+- **Attacker's view:** an attacker terminal fills in live as the participant types, and a recorded attacker point-of-view plays in the evilginx scenario (`public/videos/attacker-pov.*`)
+- **Coach:** optional two-level hints (a nudge, then an explanation)
+- **Debrief** with timeline, technique card, "old advice vs. what happened", detection view, controls, and cited sources
+- **Operator console** at `/operator` for booth staff: start or skip scenarios, toggle coach hints and **Demo mode** (presenter-led: no counter, no spoilers), reset all state. Not for participants.
+- **Idle reset:** the app returns to the start screen after a period without input, so a booth stays ready for the next visitor
+- **Handout:** a one-page summary card in `docs/card.html` / `docs/card.pdf`
 
-- **Available Apps:**  
-    The simulated desktop includes several interactive apps:
-    - **Email Client:** Receive and interact with emails, some of which may be phishing attempts.
-    - **Web Browser:** Browse simulated websites, download files, and encounter potential threats.
-    - **Notepad:** Allows you to take notes or write down important information.
-    - **Antivirus Scanner:**  
-      A tool to scan files and emails for potential threats. Users can learn how to use antivirus software effectively to detect and remove threats.
-    - **Virtual Assistant (Skippy):**  
-      An AI assistant that provides hints, tips, and guidance throughout the missions. Skippy can help users understand threats and how to avoid them.
+## Tech stack
 
-All apps are sandboxed within the game environment, allowing for safe experimentation and learning.
+Nuxt 3 (Vue 3, client-side SPA with `ssr: false`), TypeScript, TailwindCSS 4, Pinia.
 
-## Tech Stack
+## Running locally
 
-The project was primarily built using web technologies, for example:
-- Nuxt 3 (Vue)
-- TypeScript
-- TailwindCSS
-- Pinia
+Requirements: Node.js LTS and [pnpm](https://pnpm.io) (`corepack enable`).
 
-Deployment is done using Netlify, syncing directly with the current state of the GitHub repository.
+```bash
+pnpm i           # install dependencies
+pnpm run dev     # dev server at http://localhost:3000
+```
 
-## How to build/deploy
+Production:
 
-To run Doors95 locally, you need to have the latest Node.js LTS version and the pnpm package manager installed.  
-After you cloned the repository, first install dependencies using `pnpm i`.
+```bash
+pnpm generate     # static SPA build
+npx nuxt preview  # preview the generated build
+```
 
-- For the local development server, you can run `pnpm run dev`
-- To build for production, run `pnpm generate`
+For a booth, build and serve with `npx nuxt build`, then `PORT=3111 node .output/server/index.mjs`, and open it full screen at 1920x1080.
 
-## Future Potential
+There is no test suite or linter configured; verify changes with `npx nuxt build`.
 
-- **More Topics:**  
-    Doors95 could cover more cybersecurity areas—like privacy, digital citizenship, and advanced threats—tailored for all ages and skill levels.
+## Project layout
 
-- **New Missions:**  
-    Thanks to its modular setup, it’s easy to add new scenarios, such as social engineering, ransomware, or safe online shopping.
+```
+components/booth/      boot check, welcome slide, entry screen
+components/range/      desktop, coach, debrief, run dialog
+components/apps/       simulated applications
+components/scenarios/  per-scenario pages and panels
+stores/                Pinia stores (scenarios, session, windows, payloads, missions)
+composables/, utils/   booth state, idle reset, attacker banners and slides
+pages/                 routes (/ and /operator)
+docs/                  handout card and screenshots
+public/                static assets (served at site root)
+```
 
-- **Minigames:**  
-    Ideas include:
-    - Spotting fake browser extensions
-    - Creating strong passwords to block brute-force attacks
-    - Sorting out phishing emails
-    - Deciding what to do with mystery USB drives
-    - Racing to install software updates before threats hit
+To add a scenario, add an entry to `stores/scenarios.ts`, add it to `order`, and build its UI under `components/scenarios/`.
 
-- **Community Content:**  
-    In the future, users could create and share their own missions or apps, keeping things fresh and relevant.
+## Credits and origin
 
-- **Training Integration:**  
-    Doors95 could be used in real training programs, with progress tracking and certificates for schools or companies.
+This project is a fork of [Doors95](https://github.com/darius-it/doors95), created by the **Beavers Testing in Production** team at Hackaburg 2025: Lev, Darius, Marinus, Matej, Jonathan. The desktop, window, and event architecture comes from their work. Honey95 replaces the educational content, scenarios, and interaction model with a social-engineering attack simulator.
 
-All these ideas aim to make Doors95 even more useful and fun for learning about cybersecurity.
-
-## Credits
-
-Beavers Testing in Production team @ Hackaburg 2025: Lev, Darius, Marinus, Matej, Jonathan
+The upstream repository does not currently declare a license. All rights to the original code remain with its authors; this fork is published on GitHub as a fork of their repository.

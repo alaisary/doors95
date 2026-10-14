@@ -103,7 +103,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 15vh;
+  margin-top: calc(15 * var(--vh));
 }
 
 .logo {

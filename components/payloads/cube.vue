@@ -10,9 +10,9 @@ const cubeContainer = ref(null)
 
 onMounted(() => {
   const scene = new THREE.Scene()
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+  const camera = new THREE.PerspectiveCamera(75, vp.w / vp.h, 0.1, 1000)
   const renderer = new THREE.WebGLRenderer({ antialias: true,alpha:true})
-  renderer.setSize(window.innerWidth, window.innerHeight)
+  renderer.setSize(vp.w, vp.h)
   cubeContainer.value.appendChild(renderer.domElement)
 
   const geometry = new THREE.BoxGeometry()
@@ -54,8 +54,8 @@ onMounted(() => {
 .cube-container {
   position: absolute;
   overflow: hidden;
-  height: 100vh;
-  width: 100vw;
+  height: calc(100 * var(--vh));
+  width: calc(100 * var(--vw));
   top:0;
   left:0;
   background:transparent;

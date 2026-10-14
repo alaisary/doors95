@@ -1,11 +1,11 @@
 <template>
-  <div class="dse-window min-w-2xl max-w-2xl">
+  <div class="dse-window">
     <header class="dse-header">
-      <div class="dse-title">Doors Security Essentials</div>
+      <div class="dse-title">Honey Security Essentials</div>
       <div class="dse-buttons">
         <button @click="startScan" :disabled="scanning || disinfecting">{{ scanning ? 'Scanning...' : 'Scan' }}</button>
         <button
-          v-if="!scanning && !disinfecting && missionInfo.infectionLevel > 5"
+          v-if="!scanning && !disinfecting && infectionLevel > 5"
           @click="startDisinfect"
           :disabled="disinfecting"
           style="background:#4caf50; color:#fff; border-color:#388e3c;"
@@ -59,6 +59,7 @@ import { ref, computed, onMounted } from 'vue'
 
 const missionInfo = useMissionsStore();
 const payloadsState = usePayloadsStore();
+const session = useSessionStore();
 
 const scanning = ref(false)
 const progress = ref(0)
@@ -70,44 +71,65 @@ const disinfectProgress = ref(0)
 const totalFiles = 24560 // or any number you want
 const scannedFiles = computed(() => Math.round((progress.value / 100) * totalFiles))
 
+// a live compromise in the range (clickfix payload) overrides the game's
+// mission infection level — the machine is genuinely infected now.
+// keyed on the implant itself (antRunner), not session flags: switching to
+// another scenario mail resets flags, but the ants keep crawling
+const implantLive = computed(() =>
+  (session.compromised || payloadsState.antRunner) && !session.flags.disinfected
+)
+const infectionLevel = computed(() => (implantLive.value ? 90 : missionInfo.infectionLevel))
+
 const statusClass = computed(() => {
   if (disinfecting.value) return 'scanning'
   if (scanning.value) return 'scanning'
-  if (missionInfo.infectionLevel < 25) return 'safe'
-  if (missionInfo.infectionLevel < 50) return 'warning'
+  if (infectionLevel.value < 25) return 'safe'
+  if (infectionLevel.value < 50) return 'warning'
   return 'infected'
 })
 
 const statusText = computed(() => {
   if (disinfecting.value) return 'Disinfecting...'
   if (scanning.value) return 'Scanning...'
-  if (missionInfo.infectionLevel < 25) return 'You are safe'
-  if (missionInfo.infectionLevel < 50) return 'There are warnings'
-  if (missionInfo.infectionLevel < 75) return 'You are infected'
+  if (infectionLevel.value < 25) return 'You are safe'
+  if (infectionLevel.value < 50) return 'There are warnings'
+  if (infectionLevel.value < 75) return 'You are infected'
   return 'Severe infection detected'
 })
 
 const statusDesc = computed(() => {
   if (disinfecting.value) return 'Attempting to disinfect your system. Please wait...'
-  if (scanning.value) return 'Doors Security Essentials is scanning your computer for threats.'
-  if (missionInfo.infectionLevel < 25) return 'No threats detected. Your computer is protected.'
-  if (missionInfo.infectionLevel < 50) return 'Some issues were found. Please review the warnings below.'
-  if (missionInfo.infectionLevel < 75) return 'Threats detected! Immediate action is recommended.'
+  if (scanning.value) return 'Honey Security Essentials is scanning your computer for threats.'
+  if (infectionLevel.value < 25) return 'No threats detected. Your computer is protected.'
+  if (infectionLevel.value < 50) return 'Some issues were found. Please review the warnings below.'
+  if (infectionLevel.value < 75) return 'Threats detected! Immediate action is recommended.'
   return 'Critical threats detected! System at risk.'
 })
 
 const statusIcon = computed(() => {
   if (disinfecting.value) return '/images/scanning_icon.png'
   if (scanning.value) return '/images/scanning_icon.png'
-  if (missionInfo.infectionLevel < 25) return '/images/green_smiley.png'
-  if (missionInfo.infectionLevel < 50) return '/images/yellow_smiley.png'
-  if (missionInfo.infectionLevel < 75) return '/images/red_smiley.png'
+  if (infectionLevel.value < 25) return '/images/green_smiley.png'
+  if (infectionLevel.value < 50) return '/images/yellow_smiley.png'
+  if (infectionLevel.value < 75) return '/images/red_smiley.png'
   return '/images/cursed_smiley.png'
 })
 
-// Generate warnings/errors based on missionInfo.infectionLevel
+// Generate warnings/errors based on the effective infection level
 function generateWarnings(level) {
   const issues = []
+
+  // a clickfix compromise reports exactly what the payload left behind —
+  // as long as the implant is still live, even if the user switched mails
+  if (implantLive.value) {
+    return [
+      { severity: 'error', message: 'Trojan:Win32/ClickFix — payload "uv.ps1" executed from the Run dialog' },
+      { severity: 'error', message: 'Suspicious scheduled task "OneDriveSyncTelemetry" (persistence)' },
+      { severity: 'error', message: 'C2 beacon: cdn.wadigate-support-cdn.com → 203.0.113.66:443' },
+      { severity: 'warning', message: 'Clipboard hijack: web page replaced the OS clipboard' },
+      { severity: 'warning', message: 'PowerShell spawned with "-w hidden -ep bypass"' },
+    ]
+  }
 
   // Define some example messages
   const warningMessages = [
@@ -178,7 +200,12 @@ function startScan() {
       clearInterval(interval)
       scanning.value = false
       // Generate warnings/errors after scanning finishes
-      warnings.value = generateWarnings(missionInfo.infectionLevel)
+      warnings.value = generateWarnings(infectionLevel.value)
+      // the implant is real: Skippy makes the user act, the app does not
+      if (implantLive.value) {
+        session.flag('av_scanned')
+        session.coach('Scan complete — severe infection. Now disinfect it yourself: hit Disinfect.')
+      }
       return
     }
     progress.value += 3
@@ -197,6 +224,7 @@ function resetAndScan() {
 
 function startDisinfect() {
   if (disinfecting.value) return
+  const wasInfected = implantLive.value
   disinfecting.value = true
   disinfectProgress.value = 0
 
@@ -216,6 +244,11 @@ function startDisinfect() {
       missionInfo.infectionLevel = 0
       warnings.value = []
       progress.value = 100
+      // the clickfix infection was cleaned by the user — debrief unlocked
+      if (wasInfected) {
+        session.flag('disinfected')
+        session.coach('Disinfected — the ants are gone, for now. Want to see what actually happened?')
+      }
       return
     }
     disinfectProgress.value += 5
@@ -232,11 +265,14 @@ onMounted(() => {
 <style scoped>
 .dse-window {
   width: 100%;
+  height: 100%;
   background: #eaf3fa;
-  border: 2px solid #3a6ea5;
-  border-radius: 8px;
-  box-shadow: 0 2px 16px #0003;
+  border: none;
+  box-shadow: none;
   user-select: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .dse-header {
@@ -244,7 +280,8 @@ onMounted(() => {
   color: #fff;
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 0.35rem 0.9rem;
+  flex-shrink: 0;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   border-bottom: 1px solid #2c4e7a;
@@ -258,7 +295,7 @@ onMounted(() => {
 
 .dse-title {
   font-weight: bold;
-  font-size: 1.3rem;
+  font-size: 1rem;
   flex: 1;
   letter-spacing: 0.5px;
   text-shadow: 1px 1px 0 #2c4e7a;
@@ -289,7 +326,7 @@ onMounted(() => {
 }
 
 .dse-body {
-  padding: 1.5rem 2rem 2rem 2rem;
+  padding: 0.9rem 1.1rem 1.2rem;
 }
 
 .dse-status {
@@ -298,23 +335,23 @@ onMounted(() => {
   background: #fff;
   border: 1px solid #b0c4de;
   border-radius: 6px;
-  padding: 1rem 1.5rem;
-  margin-bottom: 1.5rem;
+  padding: 0.7rem 1rem;
+  margin-bottom: 0.9rem;
   box-shadow: 0 1px 4px #0001;
 }
 .dse-status-icon {
-  width: 48px;
-  height: 48px;
-  margin-right: 1.2rem;
+  width: 36px;
+  height: 36px;
+  margin-right: 0.9rem;
 }
 .dse-status-text h2 {
-  margin: 0 0 0.2rem 0;
-  font-size: 1.4rem;
+  margin: 0 0 0.15rem 0;
+  font-size: 1.1rem;
   font-weight: bold;
 }
 .dse-status-text p {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: #444;
 }
 .dse-status.safe {
@@ -343,11 +380,11 @@ onMounted(() => {
 
 .dse-progress-bar {
   width: 100%;
-  height: 18px;
+  height: 14px;
   background: #c7d7ea;
   border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   box-shadow: inset 0 0 5px #b0c4de;
   border: 1px solid #b0c4de;
 }
@@ -363,13 +400,12 @@ onMounted(() => {
 }
 
 .dse-warnings-summary {
-  font-size: 1rem;
-  max-width: 340px;
+  font-size: 0.9rem;
   margin: 0 auto;
   background: #fff;
   border: 1px solid #b0c4de;
   border-radius: 6px;
-  padding: 1rem 1.2rem;
+  padding: 0.8rem 1rem;
   box-shadow: 0 1px 4px #0001;
 }
 

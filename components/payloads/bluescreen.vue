@@ -44,8 +44,8 @@ onMounted(() => {
 .bluescreen {
   background-color: #0000aa; /* classic XP BSOD blue */
   color: white;
-  width: 100vw;
-  height: 100vh;
+  width: calc(100 * var(--vw));
+  height: calc(100 * var(--vh));
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;

@@ -24,7 +24,7 @@
         </span>
       </div>
       <div class="window-content">
-        <div class="loading-text">Welcome to Doors95</div>
+        <div class="loading-text">Welcome to Honey95</div>
         <div class="progress-bar">
           <div class="progress-bar-inner" :style="{ width: progress + '%' }"></div>
         </div>
@@ -36,6 +36,8 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from "vue"
+const props = defineProps<{ skipBios?: boolean }>()
+const emit = defineEmits(['booted'])
 const bootChime = new Audio("/audio/bootsound.mp3")
 bootChime.volume = 1.0
 
@@ -46,7 +48,8 @@ onMounted(() => {
   })
 })
 
-const stage = ref(0) // 0: BIOS, 1: Loading, 2: Fade out, 3: Gone
+// the attract screen already showed the power-on check, so a booth visitor starts at the Windows window
+const stage = ref(props.skipBios ? 1 : 0) // 0: BIOS, 1: Loading, 2: Fade out, 3: Gone
 const progress = ref(0)
 const fadeOut = ref(false)
 
@@ -70,7 +73,7 @@ onMounted(() => {
   }, 500)
 
   // BIOS screen for 3.5s (increased timeout)
-  setTimeout(() => {
+  const startLoading = () => {
       stage.value = 1
       // Start loading progress (faster)
       const interval = setInterval(() => {
@@ -87,11 +90,14 @@ onMounted(() => {
             // After fade, remove from DOM
             setTimeout(() => {
               stage.value = 3
+              emit('booted')
             }, 800)
           }, 400) // shorter wait before fade out
         }
       }, 80) // faster interval
-    }, 3000) // BIOS screen for 2s
+    }
+  if (props.skipBios) startLoading()
+  else setTimeout(startLoading, 3000) // BIOS screen for 3s
   })
 </script>
 
@@ -115,7 +121,7 @@ onMounted(() => {
 /* BIOS Boot Screen */
 .bios-screen {
   width: 100%;
-  height: 100vh;
+  height: calc(100 * var(--vh));
   background: #000;
   color: #0f0;
   display: flex;

@@ -61,8 +61,8 @@ export default {
   text-align: center;
   top:0;
   left:0;
-  width: 100vw;
-  height: 100vh;
+  width: calc(100 * var(--vw));
+  height: calc(100 * var(--vh));
   position:absolute;
   z-index: 100001;
   overflow: hidden;

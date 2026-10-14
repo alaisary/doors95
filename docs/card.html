@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Honey95 card: tell, control, signal</title>
+<style>
+  @page { size: A4 landscape; margin: 9mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111; background: #fff; }
+  .sheet { border: 2px solid #111; }
+  header { background: #008080; color: #fff; padding: 7px 12px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #111; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: .04em; }
+  header span { font-size: 11px; opacity: .92; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th { background: #c0c0c0; font-size: 11.5px; letter-spacing: .08em; text-align: left; padding: 5px 8px; border-bottom: 2px solid #111; }
+  th.h { background: #dfeaea; } th.c { background: #e8e4d0; } th.s { background: #e9dada; }
+  td { vertical-align: top; padding: 7px 9px; font-size: 11.5px; line-height: 1.34; border-bottom: 1px solid #999; }
+  tr:last-child td { border-bottom: none; }
+  td + td, th + th { border-left: 1px solid #999; }
+  .atk { font-weight: bold; font-size: 13px; }
+  .old { margin-top: 3px; font-size: 10.5px; color: #555; }
+  .old b { color: #a00; }
+  col.a { width: 17%; } col.x { width: 27.6%; }
+  footer { border-top: 2px solid #111; padding: 7px 12px; display: flex; justify-content: space-between; gap: 18px; font-size: 11px; background: #f3f3f3; }
+  footer strong { font-size: 11px; }
+</style></head><body>
+<div class="sheet">
+<header><h1>HONEY95: THREE PLACES TO STOP IT</h1><span>Social engineering range. Each attack beat a standard piece of advice.</span></header>
+<table>
+<colgroup><col class="a"><col class="x"><col class="x"><col class="x"></colgroup>
+<tr><th>THE ATTACK</th><th class="h">1 · HUMAN TELL</th><th class="c">2 · CONTROL</th><th class="s">3 · SOC SIGNAL</th></tr>
+
+<tr><td><div class="atk">Login window that isn't one</div>AiTM, browser-in-the-browser<div class="old"><b>Advice:</b> use MFA. <b>Result:</b> it was passed along, live.</div></td>
+<td>Drag the sign-in window to the edge of the page. A fake one stops there; a real window can leave the page and has its own taskbar entry.</td>
+<td>Passkeys or FIDO2 keys, bound to the real domain, with weaker fallbacks turned off. Compliant-device checks.</td>
+<td>MFA passed from a hosting-provider IP the user never uses, then session use from a different IP or ASN within minutes.</td></tr>
+
+<tr><td><div class="atk">Device-code sign-in</div>Token theft on the real Microsoft page<div class="old"><b>Advice:</b> check the URL. <b>Result:</b> it was the real one.</div></td>
+<td>Only type a code you started, on a screen you opened. A code handed to you by a web page belongs to the attacker.</td>
+<td>Block the device-code flow in Conditional Access except where needed. Require compliant devices.</td>
+<td>A sign-in logged with protocol deviceCode, then a new device registration or token use from an unfamiliar location.</td></tr>
+
+<tr><td><div class="atk">"Verify you are human"</div>ClickFix<div class="old"><b>Advice:</b> don't download anything. <b>Result:</b> you ran it yourself.</div></td>
+<td>A website never needs Win+R. Read anything it gave you in Notepad before you run it.</td>
+<td>Block Win+R and restrict PowerShell for standard users. AppLocker or WDAC for scripts.</td>
+<td>explorer.exe or a browser starting powershell.exe with hidden-window, bypass or download-and-run arguments.</td></tr>
+
+<tr><td><div class="atk">Look-alike portal</div>Domain confusion on free hosting<div class="old"><b>Advice:</b> check the padlock. <b>Result:</b> it was real; so was the scam.</div></td>
+<td>Read the domain just before the first single slash. Everything left of it is decoration. Open portals from your bookmark.</td>
+<td>Block or isolate sign-in pages on free-hosting platforms. Hold first-seen domains. Origin-bound password managers.</td>
+<td>A proxy or DNS hit for a brand keyword inside a free-hosting or first-seen hostname.</td></tr>
+
+<tr><td><div class="atk">Trusted share, wrong file</div>Script behind a real Zoom link<div class="old"><b>Advice:</b> verify the sender. <b>Result:</b> it really was Zoom.</div></td>
+<td>Show file extensions. A contract is never a .js, .vbs or .hta file.</td>
+<td>Open script file types in Notepad by default. Attack surface reduction rules. Mark external shares.</td>
+<td>wscript.exe or cscript.exe launched from Downloads, then an outbound connection to an unfamiliar host.</td></tr>
+
+<tr><td><div class="atk">Poisoned package</div>Supply chain, install hook<div class="old"><b>Advice:</b> trust popular packages. <b>Result:</b> nine days old, three versions.</div></td>
+<td>Check publisher, age and users. A name from a social post is not provenance. Run npm view before you install.</td>
+<td>Install with --ignore-scripts. Internal allow-list. Short-lived, scoped publish tokens.</td>
+<td>An install process reading ~/.ssh, .env or cloud credentials, then connecting somewhere that is not the registry.</td></tr>
+</table>
+<footer><div><strong>Pick one of each for your environment:</strong> a habit people can use, a control you can switch on, a signal you can alert on.</div>
+<div>Simulation. Every domain, log and number in the demo is invented. Guidance is indicative: check it against your vendor's documentation.</div></footer>
+</div></body></html>
