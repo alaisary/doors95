@@ -15,6 +15,8 @@
         ref="dragHandle"
         class="win95-titlebar flex items-center justify-between flex-shrink-0"
         :class="{ inactive: !isFocused }"
+        style="touch-action: none"
+        @pointerdown="startDrag"
         @dblclick="toggleMax"
       >
         <div class="flex items-center gap-2 min-w-0">
@@ -46,8 +48,6 @@
 </template>
 
 <script lang="ts" setup>
-import { useDraggable } from '@vueuse/core'
-
 const props = defineProps({
   name: { type: String, required: true },
   lastClickedWindow: { type: String, default: '' },
@@ -77,14 +77,32 @@ const isOpen = computed(() =>
 const isFocused = computed(() => props.lastClickedWindow === props.name)
 const isMaximized = computed(() => windowsStore.maximizedWindows.includes(props.name))
 
-const { x, y, style: dragStyle } = useDraggable(el, {
-  handle: dragHandle,
-  initialValue: { x: props.initialX, y: props.initialY },
-  onStart: () => {
-    if (isMaximized.value) return false // no dragging a maximized window
-    emit('clickInsideWindow', props.name)
-  },
-})
+// ---- pointer-based drag (mouse and touch) ----
+// Pointer deltas are real pixels; the desktop is scaled, so convert with toApp.
+const x = ref(props.initialX)
+const y = ref(props.initialY)
+const dragStyle = computed(() => `left: ${x.value}px; top: ${y.value}px;`)
+
+function startDrag(e: PointerEvent) {
+  if (isMaximized.value) return // no dragging a maximized window
+  if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return
+  emit('clickInsideWindow', props.name)
+
+  const offX = toApp(e.clientX) - x.value
+  const offY = toApp(e.clientY) - y.value
+  const onMove = (ev: PointerEvent) => {
+    x.value = toApp(ev.clientX) - offX
+    y.value = toApp(ev.clientY) - offY
+  }
+  const onUp = () => {
+    window.removeEventListener('pointermove', onMove)
+    window.removeEventListener('pointerup', onUp)
+    window.removeEventListener('pointercancel', onUp)
+  }
+  window.addEventListener('pointermove', onMove)
+  window.addEventListener('pointerup', onUp)
+  window.addEventListener('pointercancel', onUp)
+}
 
 // ---- size (resizable like a real window) ----
 const MIN_W = 420
