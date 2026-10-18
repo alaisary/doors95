@@ -1,7 +1,7 @@
 // A visitor who walks away must not leave their session on the screen.
 // After IDLE_MS without input a prompt appears; if it is not answered the
 // station returns to the attract loop.
-const IDLE_MS = 75_000
+const IDLE_MS = 120_000
 // reading a debrief is not walking away
 const IDLE_READING_MS = 150_000
 const GRACE_S = 15

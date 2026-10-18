@@ -212,12 +212,8 @@ function checkNow() {
   setTimeout(() => {
     verifyOpen.value = true
     session.timelineStep('Page instructs: Win+R / terminal command')
-    // booth fallback: some host OSes swallow Win+R before the browser sees it
-    setTimeout(() => {
-      if (stage.value === 'steps' && !session.flags.run_dialog_opened && !session.flags.compromised) {
-        session.coach('If Win+R does nothing on this demo machine, press Ctrl+R or use Start → Run…')
-      }
-    }, 20000)
+    // a browser can't receive the Windows key, so the simulator maps Win+R to Ctrl+R
+    session.coach('Simulator note: this runs in a browser, so the Windows key is not available. Press Ctrl+R instead of Win+R (or use Start → Run…).')
   }, 500)
 }
 
